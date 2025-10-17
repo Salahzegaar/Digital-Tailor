@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SceneInputForm } from './components/SceneInputForm';
@@ -12,13 +13,14 @@ import { editImage } from './services/geminiService';
 import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
 import { Login } from './components/Login';
 
-// FIX: Replaced inline type with a named interface to resolve global declaration conflicts.
-interface AIStudio {
-  hasSelectedApiKey: () => Promise<boolean>;
-  openSelectKey: () => Promise<void>;
-}
-
+// FIX: Moved the AIStudio interface inside the `declare global` block to ensure it has a global scope
+// and resolves potential declaration conflicts across modules.
 declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+
   interface Window {
     aistudio: AIStudio;
   }

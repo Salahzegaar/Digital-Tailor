@@ -10,10 +10,29 @@ export const Login: React.FC<LoginProps> = ({ onLoginWithKey, onSelectFromStudio
     const [isLoading, setIsLoading] = useState(false);
     const [apiKey, setApiKey] = useState('');
     const [showKey, setShowKey] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const validateKey = (key: string): boolean => {
+        if (key && (!key.startsWith('AIzaSy') || key.length !== 39)) {
+            setError("المفتاح غير صالح. يجب أن يبدأ بـ 'AIzaSy' ويكون طوله 39 حرفًا.");
+            return false;
+        }
+        setError(null);
+        return true;
+    };
+
+    const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newKey = e.target.value;
+        setApiKey(newKey);
+        if (error) {
+            validateKey(newKey);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!apiKey) return;
+        if (!validateKey(apiKey)) return;
+        
         setIsLoading(true);
         // Simulate a small delay to show loading, as the state change is instant
         setTimeout(() => {
@@ -51,11 +70,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginWithKey, onSelectFromStudio
                                     id="api-key-input"
                                     type={showKey ? 'text' : 'password'}
                                     value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
+                                    onChange={handleApiKeyChange}
+                                    onBlur={() => validateKey(apiKey)}
                                     placeholder="AIzaSy... "
-                                    className="w-full px-4 py-3 pr-10 bg-white/50 border-2 border-stone-300/70 rounded-lg text-stone-800 focus:ring-2 focus:ring-red-800 focus:border-red-800 transition-colors"
+                                    className={`w-full px-4 py-3 pr-10 bg-white/50 border-2 rounded-lg text-stone-800 focus:ring-2 focus:ring-red-800 transition-colors ${error ? 'border-red-500 focus:border-red-500' : 'border-stone-300/70 focus:border-red-800'}`}
                                     required
                                     disabled={isLoading}
+                                    aria-invalid={!!error}
+                                    aria-describedby="api-key-error"
                                 />
                                 <button
                                     type="button"
@@ -66,12 +88,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginWithKey, onSelectFromStudio
                                     {showKey ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                                 </button>
                             </div>
+                             {error && <p id="api-key-error" className="text-red-600 text-xs mt-1 animate-scale-in">{error}</p>}
                         </div>
                         
                         <div>
                             <button
                                 type="submit"
-                                disabled={isLoading || !apiKey}
+                                disabled={isLoading || !apiKey || !!error}
                                 className="w-full mt-2 px-8 py-3 bg-red-800 text-white font-bold rounded-lg hover:bg-red-700 disabled:bg-stone-400/50 disabled:cursor-not-allowed disabled:text-stone-600 transition-all duration-300 transform hover:scale-105 active:scale-[0.98] shadow-lg shadow-red-900/30"
                             >
                                 {isLoading ? '...جاري الدخول' : 'دخول'}
