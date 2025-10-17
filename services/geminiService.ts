@@ -55,7 +55,7 @@ export const editImage = async (images: ImagePart[], prompt: string): Promise<Ed
         console.error("Error calling Gemini API:", error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         if (errorMessage.includes("API key not valid") || errorMessage.includes("Requested entity was not found")) {
-             throw new Error("مفتاح API غير صالح أو لم يتم العثور عليه. يرجى اختيار مفتاح صالح للمتابعة.");
+             throw new Error("مفتاح API الذي تم تكوينه غير صالح. يرجى التأكد من صحته.");
         }
         if (errorMessage.includes("quota")) {
             throw new Error("لقد تجاوزت الحصة المتاحة لمفتاح API الخاص بك. يرجى التحقق من خطتك وتفاصيل الفواتير.");

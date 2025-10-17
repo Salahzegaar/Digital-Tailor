@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Login } from './components/Login';
 import { Header } from './components/Header';
 import { SceneInputForm } from './components/SceneInputForm';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -13,8 +12,6 @@ import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
 
 
 export const App: React.FC = () => {
-    const [isApiKeyReady, setIsApiKeyReady] = useState<boolean>(false);
-    const [checkingApiKey, setCheckingApiKey] = useState<boolean>(true);
     const [theme, setTheme] = useState<Theme>('light');
     const [images, setImages] = useState<ImagePart[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -32,41 +29,8 @@ export const App: React.FC = () => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
     
-    useEffect(() => {
-        const aistudio = (window as any).aistudio;
-        if (!aistudio) {
-            setError("بيئة التشغيل غير صالحة. لا يمكن العثور على aistudio.");
-            setCheckingApiKey(false);
-            return;
-        }
-
-        const checkApiKey = async () => {
-            try {
-                const hasKey = await aistudio.hasSelectedApiKey();
-                setIsApiKeyReady(hasKey);
-            } catch (e) {
-                console.error("Error checking for API key:", e);
-                setIsApiKeyReady(false);
-            } finally {
-                setCheckingApiKey(false);
-            }
-        };
-        checkApiKey();
-    }, []);
-
     const handleThemeChange = (newTheme: Theme) => setTheme(newTheme);
     
-    const handleSelectKey = async () => {
-        try {
-            await (window as any).aistudio.openSelectKey();
-            // Optimistically set to true to handle potential race condition
-            setIsApiKeyReady(true);
-        } catch (e) {
-            console.error("Could not open select key dialog:", e);
-            setError("لم نتمكن من فتح مربع حوار تحديد المفتاح.");
-        }
-    };
-
     const handleReset = () => {
         setImages([]);
         setImagePreviews(prev => {
@@ -156,12 +120,7 @@ export const App: React.FC = () => {
             setEditedImageResult(result);
         } catch (err: any) {
             const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
-             if (errorMessage.includes("مفتاح API غير صالح")) {
-                setIsApiKeyReady(false);
-                setError("مفتاح API غير صالح أو تم رفضه. يرجى اختيار مفتاح API صالح للمتابعة.");
-            } else {
-                setError(errorMessage);
-            }
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -205,25 +164,6 @@ export const App: React.FC = () => {
             </div>
         );
     };
-
-    if (checkingApiKey) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
-                    <div className="flex items-center justify-center space-x-2 rtl:space-x-reverse">
-                        <div className="w-4 h-4 rounded-full bg-red-800 animate-pulse [animation-delay:-0.3s]"></div>
-                        <div className="w-4 h-4 rounded-full bg-red-800 animate-pulse [animation-delay:-0.15s]"></div>
-                        <div className="w-4 h-4 rounded-full bg-red-800 animate-pulse"></div>
-                    </div>
-                    <p className="text-red-800 text-lg font-semibold">...جاري التحقق من مفتاح API</p>
-                </div>
-            </div>
-        );
-    }
-    
-    if (!isApiKeyReady) {
-        return <Login onSelectKey={handleSelectKey} />;
-    }
 
     return (
         <div className="min-h-screen text-stone-800 flex flex-col">
