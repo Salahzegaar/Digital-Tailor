@@ -13,7 +13,8 @@ import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
 
 
 export const App: React.FC = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [isApiKeyReady, setIsApiKeyReady] = useState<boolean>(false);
+    const [checkingApiKey, setCheckingApiKey] = useState<boolean>(true);
     const [theme, setTheme] = useState<Theme>('light');
     const [images, setImages] = useState<ImagePart[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -30,10 +31,58 @@ export const App: React.FC = () => {
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
+    
+    useEffect(() => {
+        const aistudio = (window as any).aistudio;
+        if (!aistudio) {
+            setError("بيئة التشغيل غير صالحة. لا يمكن العثور على aistudio.");
+            setCheckingApiKey(false);
+            return;
+        }
+
+        const checkApiKey = async () => {
+            try {
+                const hasKey = await aistudio.hasSelectedApiKey();
+                setIsApiKeyReady(hasKey);
+            } catch (e) {
+                console.error("Error checking for API key:", e);
+                setIsApiKeyReady(false);
+            } finally {
+                setCheckingApiKey(false);
+            }
+        };
+        checkApiKey();
+    }, []);
 
     const handleThemeChange = (newTheme: Theme) => setTheme(newTheme);
-    const handleLogin = () => setIsAuthenticated(true);
-    const handleLogout = () => setIsAuthenticated(false);
+    
+    const handleSelectKey = async () => {
+        try {
+            await (window as any).aistudio.openSelectKey();
+            // Optimistically set to true to handle potential race condition
+            setIsApiKeyReady(true);
+        } catch (e) {
+            console.error("Could not open select key dialog:", e);
+            setError("لم نتمكن من فتح مربع حوار تحديد المفتاح.");
+        }
+    };
+
+    const handleReset = () => {
+        setImages([]);
+        setImagePreviews(prev => {
+            prev.forEach(URL.revokeObjectURL);
+            return [];
+        });
+        setEditedImageResult(null);
+        setFashionPose('');
+        setFashionBackgroundColor('Cool Grey');
+        setArtisticStyle('default');
+        setIsLoading(false);
+        setError(null);
+        setHasSubmitted(false);
+        setModalImage(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     const handleImageAdd = useCallback(async (files: FileList | null, onComplete?: () => void) => {
         if (!files || files.length === 0) {
@@ -106,7 +155,13 @@ export const App: React.FC = () => {
             const result = await editImage(images, prompt);
             setEditedImageResult(result);
         } catch (err: any) {
-             setError(err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.');
+            const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
+             if (errorMessage.includes("مفتاح API غير صالح")) {
+                setIsApiKeyReady(false);
+                setError("مفتاح API غير صالح أو تم رفضه. يرجى اختيار مفتاح API صالح للمتابعة.");
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -151,14 +206,29 @@ export const App: React.FC = () => {
         );
     };
 
-    if (!isAuthenticated) {
-        return <Login onLogin={handleLogin} />;
+    if (checkingApiKey) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                    <div className="flex items-center justify-center space-x-2 rtl:space-x-reverse">
+                        <div className="w-4 h-4 rounded-full bg-red-800 animate-pulse [animation-delay:-0.3s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-red-800 animate-pulse [animation-delay:-0.15s]"></div>
+                        <div className="w-4 h-4 rounded-full bg-red-800 animate-pulse"></div>
+                    </div>
+                    <p className="text-red-800 text-lg font-semibold">...جاري التحقق من مفتاح API</p>
+                </div>
+            </div>
+        );
+    }
+    
+    if (!isApiKeyReady) {
+        return <Login onSelectKey={handleSelectKey} />;
     }
 
     return (
         <div className="min-h-screen text-stone-800 flex flex-col">
             <div className="flex-grow">
-                <Header onLogout={handleLogout} theme={theme} onThemeChange={handleThemeChange} />
+                <Header onLogout={handleReset} theme={theme} onThemeChange={handleThemeChange} />
                 <main className="container mx-auto px-4 py-8">
                     <div className="lg:grid lg:grid-cols-5 lg:gap-8">
                         <div className="lg:col-span-2 lg:sticky lg:top-8 self-start lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto custom-scrollbar">

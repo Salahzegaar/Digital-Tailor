@@ -2,18 +2,16 @@ import React, { useState } from 'react';
 import { ShirtIcon } from './Icons';
 
 interface LoginProps {
-    onLogin: () => void;
+    onSelectKey: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin }) => {
+export const Login: React.FC<LoginProps> = ({ onSelectKey }) => {
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSelect = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         setIsLoading(true);
-        setTimeout(() => {
-            onLogin();
-        }, 500);
+        onSelectKey();
     };
 
     return (
@@ -29,17 +27,22 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             </div>
                         </div>
                     </div>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <p className="text-center text-md text-stone-600 pt-4">
-                            أهلاً بك. ارفع صورة لملابسك ودع الذكاء الاصطناعي يبهرك.
-                        </p>
+                    <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+                        <div className="text-center">
+                            <p className="text-md text-stone-600 pt-4 pb-2">
+                                للبدء، يرجى اختيار مفتاح API الخاص بك من Google AI Studio.
+                            </p>
+                            <p className="text-center text-xs text-stone-500 pb-4">
+                                قد يتم تطبيق رسوم. <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-red-800 underline hover:text-red-600 transition-colors">اعرف المزيد عن الفوترة</a>.
+                            </p>
+                        </div>
                         <div className="pt-4">
                             <button
-                                type="submit"
+                                onClick={handleSelect}
                                 disabled={isLoading}
                                 className="w-full px-8 py-3 bg-red-800 text-white font-bold rounded-lg hover:bg-red-700 disabled:bg-stone-400/50 disabled:cursor-not-allowed disabled:text-stone-600 transition-all duration-300 transform hover:scale-105 active:scale-[0.98] shadow-lg shadow-red-900/30"
                             >
-                                {isLoading ? '...جاري التحضير' : 'ابدأ الآن'}
+                                {isLoading ? '...جاري الفتح' : 'اختر مفتاح API'}
                             </button>
                         </div>
                     </form>
