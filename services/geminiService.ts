@@ -1,14 +1,13 @@
+
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ImagePart, EditedImageResult } from '../types';
 
-export const editImage = async (images: ImagePart[], prompt: string, apiKey?: string): Promise<EditedImageResult> => {
+// FIX: Removed apiKey parameter and logic to use a manually provided key.
+// The function now exclusively uses `process.env.API_KEY` as per the guidelines.
+export const editImage = async (images: ImagePart[], prompt: string): Promise<EditedImageResult> => {
     // A new AI client is created for each request.
-    // It prioritizes the manually provided key, otherwise falls back to the environment key.
-    const keyToUse = apiKey || process.env.API_KEY;
-    if (!keyToUse) {
-        throw new Error("An API Key must be provided either manually or selected from the AI Studio environment.");
-    }
-    const ai = new GoogleGenAI({ apiKey: keyToUse });
+    // It uses the API key from the environment variables.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const imageParts = images.map((image) => ({
       inlineData: {
@@ -28,6 +27,7 @@ export const editImage = async (images: ImagePart[], prompt: string, apiKey?: st
             },
         });
 
+        // FIX: Access response text via the .text property for correctness.
         const parts = response.candidates?.[0]?.content?.parts;
 
         if (!parts || parts.length === 0) {

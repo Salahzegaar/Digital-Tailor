@@ -1,45 +1,15 @@
+
 import React, { useState } from 'react';
-import { ShirtIcon, EyeIcon, EyeOffIcon } from './Icons';
+import { ShirtIcon } from './Icons';
 
 interface LoginProps {
-    onLoginWithKey: (key: string) => void;
     onSelectFromStudio: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginWithKey, onSelectFromStudio }) => {
+// FIX: Removed all logic and UI related to manual API key input to comply with guidelines.
+// The component now only supports selecting a key from AI Studio.
+export const Login: React.FC<LoginProps> = ({ onSelectFromStudio }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [apiKey, setApiKey] = useState('');
-    const [showKey, setShowKey] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const validateKey = (key: string): boolean => {
-        if (key && (!key.startsWith('AIzaSy') || key.length !== 39)) {
-            setError("المفتاح غير صالح. يجب أن يبدأ بـ 'AIzaSy' ويكون طوله 39 حرفًا.");
-            return false;
-        }
-        setError(null);
-        return true;
-    };
-
-    const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newKey = e.target.value;
-        setApiKey(newKey);
-        if (error) {
-            validateKey(newKey);
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!validateKey(apiKey)) return;
-        
-        setIsLoading(true);
-        // Simulate a small delay to show loading, as the state change is instant
-        setTimeout(() => {
-            onLoginWithKey(apiKey);
-            setIsLoading(false);
-        }, 100);
-    };
 
     const handleSelectFromStudio = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
@@ -60,54 +30,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginWithKey, onSelectFromStudio
                             </div>
                         </div>
                     </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                           <label htmlFor="api-key-input" className="block text-sm font-bold text-stone-700 mb-2">
-                                أدخل مفتاح API الخاص بك
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="api-key-input"
-                                    type={showKey ? 'text' : 'password'}
-                                    value={apiKey}
-                                    onChange={handleApiKeyChange}
-                                    onBlur={() => validateKey(apiKey)}
-                                    placeholder="AIzaSy... "
-                                    className={`w-full px-4 py-3 pr-10 bg-white/50 border-2 rounded-lg text-stone-800 focus:ring-2 focus:ring-red-800 transition-colors ${error ? 'border-red-500 focus:border-red-500' : 'border-stone-300/70 focus:border-red-800'}`}
-                                    required
-                                    disabled={isLoading}
-                                    aria-invalid={!!error}
-                                    aria-describedby="api-key-error"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowKey(!showKey)}
-                                    className="absolute inset-y-0 right-0 flex items-center px-3 text-stone-500 hover:text-red-800"
-                                    aria-label={showKey ? 'إخفاء مفتاح API' : 'إظهار مفتاح API'}
-                                >
-                                    {showKey ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                                </button>
-                            </div>
-                             {error && <p id="api-key-error" className="text-red-600 text-xs mt-1 animate-scale-in">{error}</p>}
-                        </div>
-                        
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={isLoading || !apiKey || !!error}
-                                className="w-full mt-2 px-8 py-3 bg-red-800 text-white font-bold rounded-lg hover:bg-red-700 disabled:bg-stone-400/50 disabled:cursor-not-allowed disabled:text-stone-600 transition-all duration-300 transform hover:scale-105 active:scale-[0.98] shadow-lg shadow-red-900/30"
-                            >
-                                {isLoading ? '...جاري الدخول' : 'دخول'}
-                            </button>
-                        </div>
-                    </form>
                     
-                    <div className="relative flex py-5 items-center">
-                        <div className="flex-grow border-t border-stone-400/50"></div>
-                        <span className="flex-shrink mx-4 text-stone-500 text-sm">أو</span>
-                        <div className="flex-grow border-t border-stone-400/50"></div>
-                    </div>
-
                     <div className="text-center">
                          <button
                             onClick={handleSelectFromStudio}

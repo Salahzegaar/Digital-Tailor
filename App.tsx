@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SceneInputForm } from './components/SceneInputForm';
@@ -13,16 +15,15 @@ import { editImage } from './services/geminiService';
 import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
 import { Login } from './components/Login';
 
-// FIX: Moved the AIStudio interface inside the `declare global` block to ensure it has a global scope
-// and resolves potential declaration conflicts across modules.
+// FIX: Inlined the AIStudio type definition directly into the Window interface.
+// This avoids creating a separate global AIStudio interface, resolving potential
+// naming conflicts and the "identical modifiers" error.
 declare global {
-  interface AIStudio {
-    hasSelectedApiKey: () => Promise<boolean>;
-    openSelectKey: () => Promise<void>;
-  }
-
   interface Window {
-    aistudio: AIStudio;
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
   }
 }
 
@@ -40,10 +41,9 @@ export const App: React.FC = () => {
     const [modalImage, setModalImage] = useState<string | null>(null);
     const resultsRef = useRef<HTMLDivElement>(null);
 
-    // Updated/New states for authentication
+    // FIX: Removed manualApiKey state to rely solely on the environment for the API key.
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
-    const [manualApiKey, setManualApiKey] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -89,21 +89,17 @@ export const App: React.FC = () => {
 
     const handleLogout = () => {
         handleReset();
-        setManualApiKey(null); // Clear manual key
+        // FIX: Removed manualApiKey logic.
         setIsLoggedIn(false);
     };
 
-    const handleLoginWithKey = (key: string) => {
-        setManualApiKey(key);
-        setIsLoggedIn(true);
-        setError(null);
-    };
+    // FIX: Removed handleLoginWithKey as manual key input is no longer supported.
 
     const handleSelectFromStudio = async () => {
         try {
             await window.aistudio.openSelectKey();
             // Assume success after opening the dialog to handle race conditions
-            setManualApiKey(null); // Ensure no manual key is stored
+            // FIX: Removed manualApiKey logic.
             setIsLoggedIn(true);
             setError(null);
         } catch (e) {
@@ -181,21 +177,19 @@ export const App: React.FC = () => {
         }
 
         try {
-            const result = await editImage(images, prompt, manualApiKey ?? undefined);
+            // FIX: Removed manualApiKey argument from editImage call.
+            const result = await editImage(images, prompt);
             setEditedImageResult(result);
         } catch (err: any) {
-            // Check for the specific error message to trigger re-login
-            if (err.message && err.message.includes("مفتاح API غير صالح")) {
-                setError(err.message + " الرجاء إدخال مفتاح جديد أو اختياره.");
-                setIsLoggedIn(false); // Log out to show the login screen
-            } else {
-                const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
-                setError(errorMessage);
-            }
+            // Display the error without logging the user out.
+            // The user can choose to log out and enter a new key manually.
+            const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
-    }, [images, isLoading, fashionPose, fashionBackgroundColor, artisticStyle, manualApiKey]);
+    // FIX: Removed manualApiKey from dependency array.
+    }, [images, isLoading, fashionPose, fashionBackgroundColor, artisticStyle]);
 
     const renderResults = () => {
         if (isLoading) {
@@ -245,7 +239,8 @@ export const App: React.FC = () => {
     }
     
     if (!isLoggedIn) {
-        return <Login onLoginWithKey={handleLoginWithKey} onSelectFromStudio={handleSelectFromStudio} />;
+        // FIX: Removed onLoginWithKey prop from Login component.
+        return <Login onSelectFromStudio={handleSelectFromStudio} />;
     }
     
     return (
