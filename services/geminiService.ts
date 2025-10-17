@@ -1,9 +1,11 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ImagePart, EditedImageResult } from '../types';
 
+const API_KEY = 'AIzaSyAN7k_OaMlipnztKBGAo56Vntvk_3Z-bS8';
+
 export const editImage = async (images: ImagePart[], prompt: string): Promise<EditedImageResult> => {
-    // A new AI client is created for each request to ensure the most up-to-date API key is used.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // A new AI client is created for each request.
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
     
     const imageParts = images.map((image) => ({
       inlineData: {
@@ -54,8 +56,8 @@ export const editImage = async (images: ImagePart[], prompt: string): Promise<Ed
     } catch (error) {
         console.error("Error calling Gemini API:", error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-        if (errorMessage.includes("API key not valid") || errorMessage.includes("Requested entity was not found")) {
-             throw new Error("مفتاح API غير صالح أو أنك لا تملك صلاحية الوصول. يرجى اختيار مفتاح آخر والمحاولة مرة أخرى.");
+        if (errorMessage.includes("API key not valid") || errorMessage.includes("API key is invalid")) {
+             throw new Error("مفتاح API المقدم غير صالح. يرجى تحديث المفتاح في الكود.");
         }
         if (errorMessage.includes("quota")) {
             throw new Error("لقد تجاوزت الحصة المتاحة لمفتاح API الخاص بك. يرجى التحقق من خطتك وتفاصيل الفواتير.");
