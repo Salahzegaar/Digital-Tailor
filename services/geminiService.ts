@@ -1,13 +1,14 @@
 
+
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ImagePart, EditedImageResult } from '../types';
 
-// FIX: Removed apiKey parameter and logic to use a manually provided key.
-// The function now exclusively uses `process.env.API_KEY` as per the guidelines.
+// The API key is hardcoded for direct use, removing the login flow.
+const API_KEY = 'AIzaSyAN7k_OaMlipnztKBGAo56Vntvk_3Z-bS8';
+
 export const editImage = async (images: ImagePart[], prompt: string): Promise<EditedImageResult> => {
-    // A new AI client is created for each request.
-    // It uses the API key from the environment variables.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // A new AI client is created for each request using the hardcoded key.
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
     
     const imageParts = images.map((image) => ({
       inlineData: {
@@ -27,7 +28,6 @@ export const editImage = async (images: ImagePart[], prompt: string): Promise<Ed
             },
         });
 
-        // FIX: Access response text via the .text property for correctness.
         const parts = response.candidates?.[0]?.content?.parts;
 
         if (!parts || parts.length === 0) {
@@ -59,7 +59,6 @@ export const editImage = async (images: ImagePart[], prompt: string): Promise<Ed
     } catch (error) {
         console.error("Error calling Gemini API:", error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-        // Check for specific error messages that indicate an invalid or quota-exhausted key.
         if (errorMessage.includes("API key not valid") || errorMessage.includes("API key is invalid") || errorMessage.includes("quota") || errorMessage.includes("Requested entity was not found")) {
              throw new Error("مفتاح API غير صالح أو أن الحصة قد استنفدت. يرجى التحقق من المفتاح وتفاصيل الفوترة.");
         }

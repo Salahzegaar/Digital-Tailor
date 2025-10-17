@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SceneInputForm } from './components/SceneInputForm';
@@ -13,19 +10,6 @@ import { ImagePart, EditedImageResult, Theme } from './types';
 import { fileToBase64 } from './utils/fileUtils';
 import { editImage } from './services/geminiService';
 import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
-import { Login } from './components/Login';
-
-// FIX: Inlined the AIStudio type definition directly into the Window interface.
-// This avoids creating a separate global AIStudio interface, resolving potential
-// naming conflicts and the "identical modifiers" error.
-declare global {
-  interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}
 
 export const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('light');
@@ -41,32 +25,9 @@ export const App: React.FC = () => {
     const [modalImage, setModalImage] = useState<string | null>(null);
     const resultsRef = useRef<HTMLDivElement>(null);
 
-    // FIX: Removed manualApiKey state to rely solely on the environment for the API key.
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-    const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
-
-
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
-
-    // Check for AI Studio key on initial load
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const hasKey = await window.aistudio.hasSelectedApiKey();
-                if (hasKey) {
-                   setIsLoggedIn(true);
-                }
-            } catch (e) {
-                console.error("Error checking for API key:", e);
-                // Default to not logged in on error
-            } finally {
-                setIsCheckingAuth(false);
-            }
-        };
-        checkAuth();
-    }, []);
     
     const handleThemeChange = (newTheme: Theme) => setTheme(newTheme);
 
@@ -86,28 +47,6 @@ export const App: React.FC = () => {
         setModalImage(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
-
-    const handleLogout = () => {
-        handleReset();
-        // FIX: Removed manualApiKey logic.
-        setIsLoggedIn(false);
-    };
-
-    // FIX: Removed handleLoginWithKey as manual key input is no longer supported.
-
-    const handleSelectFromStudio = async () => {
-        try {
-            await window.aistudio.openSelectKey();
-            // Assume success after opening the dialog to handle race conditions
-            // FIX: Removed manualApiKey logic.
-            setIsLoggedIn(true);
-            setError(null);
-        } catch (e) {
-            console.error("Failed to open key selection:", e);
-            setError("لم نتمكن من فتح شاشة اختيار المفتاح.");
-        }
-    };
-
 
     const handleImageAdd = useCallback(async (files: FileList | null, onComplete?: () => void) => {
         if (!files || files.length === 0) {
@@ -177,18 +116,14 @@ export const App: React.FC = () => {
         }
 
         try {
-            // FIX: Removed manualApiKey argument from editImage call.
             const result = await editImage(images, prompt);
             setEditedImageResult(result);
         } catch (err: any) {
-            // Display the error without logging the user out.
-            // The user can choose to log out and enter a new key manually.
             const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
             setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
-    // FIX: Removed manualApiKey from dependency array.
     }, [images, isLoading, fashionPose, fashionBackgroundColor, artisticStyle]);
 
     const renderResults = () => {
@@ -230,23 +165,10 @@ export const App: React.FC = () => {
         );
     };
 
-    if (isCheckingAuth) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <LoadingSpinner minimal />
-            </div>
-        );
-    }
-    
-    if (!isLoggedIn) {
-        // FIX: Removed onLoginWithKey prop from Login component.
-        return <Login onSelectFromStudio={handleSelectFromStudio} />;
-    }
-    
     return (
         <div className="min-h-screen text-stone-800 flex flex-col">
             <div className="flex-grow">
-                <Header onLogout={handleLogout} theme={theme} onThemeChange={handleThemeChange} />
+                <Header onReset={handleReset} theme={theme} onThemeChange={handleThemeChange} />
                 <main className="container mx-auto px-4 py-8">
                     <div className="lg:grid lg:grid-cols-5 lg:gap-8">
                         <div className="lg:col-span-2 lg:sticky lg:top-8 self-start lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto custom-scrollbar">
