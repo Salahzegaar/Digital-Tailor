@@ -4,6 +4,7 @@ import { SceneInputForm } from './components/SceneInputForm';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { EditedImageCard } from './components/EditedImageCard';
 import { ImageModal } from './components/ImageModal';
+import { Login } from './components/Login';
 import { SparklesIcon, ShirtIcon } from './components/Icons';
 import { ImagePart, EditedImageResult, Theme } from './types';
 import { fileToBase64 } from './utils/fileUtils';
@@ -13,6 +14,7 @@ import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
 
 export const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('light');
+    const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
     const [images, setImages] = useState<ImagePart[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [editedImageResult, setEditedImageResult] = useState<EditedImageResult | null>(null);
@@ -26,10 +28,41 @@ export const App: React.FC = () => {
     const resultsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        const checkApiKey = async () => {
+            try {
+                if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+                    const keyExists = await window.aistudio.hasSelectedApiKey();
+                    setHasApiKey(keyExists);
+                } else {
+                    setHasApiKey(false);
+                }
+            } catch (e) {
+                console.error("Error checking for API key:", e);
+                setHasApiKey(false);
+            }
+        };
+        checkApiKey();
+    }, []);
+
+    useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
     
     const handleThemeChange = (newTheme: Theme) => setTheme(newTheme);
+
+    const handleSelectKey = async () => {
+        try {
+            if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+                await window.aistudio.openSelectKey();
+                setHasApiKey(true);
+            } else {
+                setError("لا يمكن العثور على وظيفة اختيار المفتاح.");
+            }
+        } catch (e) {
+            console.error("Error opening key selection:", e);
+            setError("لم نتمكن من فتح نافذة اختيار المفتاح. يرجى المحاولة مرة أخرى.");
+        }
+    };
     
     const handleReset = () => {
         setImages([]);
@@ -46,6 +79,11 @@ export const App: React.FC = () => {
         setHasSubmitted(false);
         setModalImage(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleLogout = () => {
+        handleReset();
+        setHasApiKey(false);
     };
 
     const handleImageAdd = useCallback(async (files: FileList | null, onComplete?: () => void) => {
@@ -120,6 +158,9 @@ export const App: React.FC = () => {
             setEditedImageResult(result);
         } catch (err: any) {
             const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
+            if (errorMessage.includes("مفتاح API غير صالح")) {
+                setHasApiKey(false);
+            }
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -164,11 +205,23 @@ export const App: React.FC = () => {
             </div>
         );
     };
+    
+    if (hasApiKey === null) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
+
+    if (!hasApiKey) {
+        return <Login onSelectKey={handleSelectKey} />;
+    }
 
     return (
         <div className="min-h-screen text-stone-800 flex flex-col">
             <div className="flex-grow">
-                <Header onLogout={handleReset} theme={theme} onThemeChange={handleThemeChange} />
+                <Header onLogout={handleLogout} theme={theme} onThemeChange={handleThemeChange} />
                 <main className="container mx-auto px-4 py-8">
                     <div className="lg:grid lg:grid-cols-5 lg:gap-8">
                         <div className="lg:col-span-2 lg:sticky lg:top-8 self-start lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto custom-scrollbar">
