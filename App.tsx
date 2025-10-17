@@ -10,7 +10,6 @@ import { fileToBase64 } from './utils/fileUtils';
 import { editImage } from './services/geminiService';
 import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
 
-
 export const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('light');
     const [images, setImages] = useState<ImagePart[]>([]);

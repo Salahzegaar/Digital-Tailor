@@ -1,12 +1,11 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ImagePart, EditedImageResult } from '../types';
 
-// The API_KEY is managed by the environment after user selection via AI Studio.
-// No hardcoded key is needed here.
+const API_KEY = "AIzaSyAN7k_OaMlipnztKBGAo56Vntvk_3Z-bS8";
 
 export const editImage = async (images: ImagePart[], prompt: string): Promise<EditedImageResult> => {
-    // A new AI client is created for each request to ensure the latest key is used.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // A new AI client is created for each request.
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
     
     const imageParts = images.map((image) => ({
       inlineData: {
@@ -59,7 +58,7 @@ export const editImage = async (images: ImagePart[], prompt: string): Promise<Ed
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         // Check for specific error messages that indicate an invalid or quota-exhausted key.
         if (errorMessage.includes("API key not valid") || errorMessage.includes("API key is invalid") || errorMessage.includes("quota") || errorMessage.includes("Requested entity was not found")) {
-             throw new Error("مفتاح API غير صالح أو أن الحصة قد استنفدت. يرجى التحقق من إعدادات مشروعك في AI Studio.");
+             throw new Error("مفتاح API غير صالح أو أن الحصة قد استنفدت. يرجى التحقق من خطة الفوترة الخاصة بك.");
         }
         throw new Error(`لم نتمكن من تعديل الصورة. الرجاء المحاولة مرة أخرى. ${errorMessage}`);
     }
