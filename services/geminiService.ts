@@ -1,11 +1,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ImagePart, EditedImageResult } from '../types';
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable is not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: "AIzaSyAN7k_OaMlipnztKBGAo56Vntvk_3Z-bS8" });
 
 export const editImage = async (images: ImagePart[], prompt: string): Promise<EditedImageResult> => {
     const imageParts = images.map((image) => ({
