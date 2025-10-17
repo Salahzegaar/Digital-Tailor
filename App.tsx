@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SceneInputForm } from './components/SceneInputForm';
@@ -9,6 +10,19 @@ import { ImagePart, EditedImageResult, Theme } from './types';
 import { fileToBase64 } from './utils/fileUtils';
 import { editImage } from './services/geminiService';
 import { BACKGROUND_PROMPTS, ARTISTIC_STYLE_TEMPLATES } from './constants';
+import { Login } from './components/Login';
+
+// FIX: Replaced inline type with a named interface to resolve global declaration conflicts.
+interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    aistudio: AIStudio;
+  }
+}
 
 export const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('light');
@@ -24,9 +38,33 @@ export const App: React.FC = () => {
     const [modalImage, setModalImage] = useState<string | null>(null);
     const resultsRef = useRef<HTMLDivElement>(null);
 
+    // Updated/New states for authentication
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+    const [manualApiKey, setManualApiKey] = useState<string | null>(null);
+
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
+
+    // Check for AI Studio key on initial load
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const hasKey = await window.aistudio.hasSelectedApiKey();
+                if (hasKey) {
+                   setIsLoggedIn(true);
+                }
+            } catch (e) {
+                console.error("Error checking for API key:", e);
+                // Default to not logged in on error
+            } finally {
+                setIsCheckingAuth(false);
+            }
+        };
+        checkAuth();
+    }, []);
     
     const handleThemeChange = (newTheme: Theme) => setTheme(newTheme);
 
@@ -46,6 +84,32 @@ export const App: React.FC = () => {
         setModalImage(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    const handleLogout = () => {
+        handleReset();
+        setManualApiKey(null); // Clear manual key
+        setIsLoggedIn(false);
+    };
+
+    const handleLoginWithKey = (key: string) => {
+        setManualApiKey(key);
+        setIsLoggedIn(true);
+        setError(null);
+    };
+
+    const handleSelectFromStudio = async () => {
+        try {
+            await window.aistudio.openSelectKey();
+            // Assume success after opening the dialog to handle race conditions
+            setManualApiKey(null); // Ensure no manual key is stored
+            setIsLoggedIn(true);
+            setError(null);
+        } catch (e) {
+            console.error("Failed to open key selection:", e);
+            setError("لم نتمكن من فتح شاشة اختيار المفتاح.");
+        }
+    };
+
 
     const handleImageAdd = useCallback(async (files: FileList | null, onComplete?: () => void) => {
         if (!files || files.length === 0) {
@@ -115,15 +179,21 @@ export const App: React.FC = () => {
         }
 
         try {
-            const result = await editImage(images, prompt);
+            const result = await editImage(images, prompt, manualApiKey ?? undefined);
             setEditedImageResult(result);
         } catch (err: any) {
-            const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
-            setError(errorMessage);
+            // Check for the specific error message to trigger re-login
+            if (err.message && err.message.includes("مفتاح API غير صالح")) {
+                setError(err.message + " الرجاء إدخال مفتاح جديد أو اختياره.");
+                setIsLoggedIn(false); // Log out to show the login screen
+            } else {
+                const errorMessage = err.message || 'للأسف حصلت مشكلة. جرب تاني كمان شوية.';
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
-    }, [images, isLoading, fashionPose, fashionBackgroundColor, artisticStyle]);
+    }, [images, isLoading, fashionPose, fashionBackgroundColor, artisticStyle, manualApiKey]);
 
     const renderResults = () => {
         if (isLoading) {
@@ -163,11 +233,23 @@ export const App: React.FC = () => {
             </div>
         );
     };
+
+    if (isCheckingAuth) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <LoadingSpinner minimal />
+            </div>
+        );
+    }
+    
+    if (!isLoggedIn) {
+        return <Login onLoginWithKey={handleLoginWithKey} onSelectFromStudio={handleSelectFromStudio} />;
+    }
     
     return (
         <div className="min-h-screen text-stone-800 flex flex-col">
             <div className="flex-grow">
-                <Header onReset={handleReset} theme={theme} onThemeChange={handleThemeChange} />
+                <Header onLogout={handleLogout} theme={theme} onThemeChange={handleThemeChange} />
                 <main className="container mx-auto px-4 py-8">
                     <div className="lg:grid lg:grid-cols-5 lg:gap-8">
                         <div className="lg:col-span-2 lg:sticky lg:top-8 self-start lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto custom-scrollbar">

@@ -1,11 +1,14 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ImagePart, EditedImageResult } from '../types';
 
-const API_KEY = "AIzaSyAN7k_OaMlipnztKBGAo56Vntvk_3Z-bS8";
-
-export const editImage = async (images: ImagePart[], prompt: string): Promise<EditedImageResult> => {
+export const editImage = async (images: ImagePart[], prompt: string, apiKey?: string): Promise<EditedImageResult> => {
     // A new AI client is created for each request.
-    const ai = new GoogleGenAI({ apiKey: API_KEY });
+    // It prioritizes the manually provided key, otherwise falls back to the environment key.
+    const keyToUse = apiKey || process.env.API_KEY;
+    if (!keyToUse) {
+        throw new Error("An API Key must be provided either manually or selected from the AI Studio environment.");
+    }
+    const ai = new GoogleGenAI({ apiKey: keyToUse });
     
     const imageParts = images.map((image) => ({
       inlineData: {
@@ -58,7 +61,7 @@ export const editImage = async (images: ImagePart[], prompt: string): Promise<Ed
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         // Check for specific error messages that indicate an invalid or quota-exhausted key.
         if (errorMessage.includes("API key not valid") || errorMessage.includes("API key is invalid") || errorMessage.includes("quota") || errorMessage.includes("Requested entity was not found")) {
-             throw new Error("مفتاح API غير صالح أو أن الحصة قد استنفدت. يرجى التحقق من خطة الفوترة الخاصة بك.");
+             throw new Error("مفتاح API غير صالح أو أن الحصة قد استنفدت. يرجى التحقق من المفتاح وتفاصيل الفوترة.");
         }
         throw new Error(`لم نتمكن من تعديل الصورة. الرجاء المحاولة مرة أخرى. ${errorMessage}`);
     }
