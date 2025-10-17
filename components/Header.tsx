@@ -1,15 +1,15 @@
 import React from 'react';
 import { Theme } from '../types';
-import { ShirtIcon, LogOutIcon } from './Icons';
+import { ShirtIcon, RefreshCwIcon } from './Icons';
 import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
-    onLogout: () => void;
+    onReset: () => void;
     theme: Theme;
     onThemeChange: (theme: Theme) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onLogout, theme, onThemeChange }) => {
+export const Header: React.FC<HeaderProps> = ({ onReset, theme, onThemeChange }) => {
     return (
         <header className="sticky top-0 z-30 bg-stone-100/50 backdrop-blur-lg border-b border-stone-300/30 py-4 px-4 text-center">
             <div className="container mx-auto flex justify-between items-center">
@@ -25,11 +25,11 @@ export const Header: React.FC<HeaderProps> = ({ onLogout, theme, onThemeChange }
                 </div>
                 <div className="w-20 flex justify-end">
                     <button
-                        onClick={onLogout}
+                        onClick={onReset}
                         className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-stone-600 hover:text-red-800 bg-stone-200/50 hover:bg-red-100/60 rounded-lg transition-all duration-200 transform active:scale-95"
-                        aria-label="تسجيل الخروج"
+                        aria-label="البدء من جديد"
                     >
-                        <LogOutIcon className="w-5 h-5" />
+                        <RefreshCwIcon className="w-5 h-5" />
                     </button>
                 </div>
             </div>

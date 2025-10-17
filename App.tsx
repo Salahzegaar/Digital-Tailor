@@ -48,10 +48,6 @@ export const App: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleLogout = () => {
-        handleReset();
-    };
-
     const handleImageAdd = useCallback(async (files: FileList | null, onComplete?: () => void) => {
         if (!files || files.length === 0) {
             onComplete?.();
@@ -172,7 +168,7 @@ export const App: React.FC = () => {
     return (
         <div className="min-h-screen text-stone-800 flex flex-col">
             <div className="flex-grow">
-                <Header onLogout={handleLogout} theme={theme} onThemeChange={handleThemeChange} />
+                <Header onReset={handleReset} theme={theme} onThemeChange={handleThemeChange} />
                 <main className="container mx-auto px-4 py-8">
                     <div className="lg:grid lg:grid-cols-5 lg:gap-8">
                         <div className="lg:col-span-2 lg:sticky lg:top-8 self-start lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto custom-scrollbar">
